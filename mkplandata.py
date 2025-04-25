@@ -75,9 +75,12 @@ def read_csv(file_path):
             next(csv_reader, None)  # ヘッダをスキップ
 
             for i, row in enumerate(csv_reader, start=2):  # 行番号は2行目から始まる
+                # 空行はスキップする.
                 if not row or row[0].strip() == "":
-                    print(f"{i}行目のバージョン番号が設定されていません: {row}")
-                    return False
+                    print(f"{i}行目をスキップしました.: {row}")
+                    continue
+                    # print(f"{i}行目のバージョン番号が設定されていません: {row}")
+                    # return False
                 data_list.append(row)
 
     except Exception as e:
