@@ -161,7 +161,10 @@ def add_planlist(row, yyyy, start_year, plan_list):
 
 
 def fill_dummydata(unique_year_list, start_year, last_year, plan_list):
-    """抜けている年のデータ（ダミーデータ）を追加する"""
+    """
+    抜けている年のデータ（ダミーデータ）を追加する
+    - 長期修繕計画では期間中の工事予定が無い年のデータも必要
+    """
 
     for cnt_year in range(start_year, last_year):
         # データが存在すればスキップする
