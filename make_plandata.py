@@ -1,4 +1,5 @@
 """
+mkplandata.py
 周期データcsvデータから長期修繕計画csvデータを作成する。
 by N.Goto
 
@@ -21,21 +22,18 @@ limmit_num = 100
 
 def main():
     # 修繕計画データリスト
-    plan_list = []
+    # plan_list = []
     # 引数のパーサーを作成
-    parser = argparse.ArgumentParser(description="「csvファイル名」と「計画最終年度」を指定する")
+    parser = argparse.ArgumentParser(description="長期修繕計画データを作成する.")
 
     # 引数を定義
-    parser.add_argument("filename", help="対象のファイル名")
-    parser.add_argument("start_year", type=int, help="計画の初年度")
-    parser.add_argument("last_year", type=int, help="計画の最終年度")
+    parser.add_argument("-f", "--file_path", type=str, required=True, help="対象のファイル名")
+    parser.add_argument("-s", "--start_year", type=int, required=True, default=2025, help="計画の初年度")
+    parser.add_argument("-e", "--last_year", type=int, required=True, default=2061, help="計画の最終年度")
 
-    # オプション引数の例（--verbose なども追加可能）
-    parser.add_argument("--verbose", action="store_true", help="詳細情報を表示")
-
-    # 引数を解析
+    # 引数の読み込み
     args = parser.parse_args()
-    file_path = args.filename
+    file_path = args.file_path
     start_year = args.start_year
     last_year = args.last_year
 
@@ -49,12 +47,15 @@ def main():
     # (1) csvファイルの読み込み
     data_list = read_csv(file_path)
 
-    # (2) 周期データの作成（最大60回の更新まで）
-    make_plan(data_list, start_year, last_year, plan_list)
+    # (2) 周期データの作成
+    plan_list = make_plan(data_list, start_year, last_year)
 
-    # (3) 作成したデータをcsvファイルとして保存
+    # (3) 工事の無い年はdummy工事を追加
+    full_plan_list = fill_dummydata(plan_list, start_year, last_year)
+
+    # (4) 作成したデータをcsvファイルとして保存
     output_file = os.path.splitext(file_path)[0] + "_out.csv"
-    save_csv(output_file, plan_list)
+    save_csv(output_file, full_plan_list)
 
 
 # CSVファイルの読み込み
@@ -90,11 +91,12 @@ def read_csv(file_path):
     return data_list
 
 
-def make_plan(data_list, start_year, last_year, plan_list):
+def make_plan(data_list, start_year, last_year):
     """
     周期データの作成
     - 工事名毎に最大100回分の工事予定を作成.
     """
+    plan_list = []
     for row in data_list:
         # 最初の工事を行う年（西暦）
         yyyy = int(row[3])
@@ -110,35 +112,7 @@ def make_plan(data_list, start_year, last_year, plan_list):
                 if int(row[4]) < 1:
                     break
 
-    # 工事予定年だけのリストを作成
-    year_list = []
-    for i in plan_list:
-        year_list.append(i[1])
-    # 重複年を除去
-    unique_year_list = list(set(year_list))
-    # 重複を除去したリストを昇順にソート
-    unique_year_list.sort()
-    # 抜けている年のデータ（ダミーデータ）を追加する
-    fill_dummydata(unique_year_list, start_year, last_year, plan_list)
-
-
-# CSVファイルにリストを書き込む
-def save_csv(file_path, data_list):
-    """
-    リスト（リストのリスト）をCSVファイルに書き込む関数。
-    """
-    if not data_list:
-        print("データが空のため、ファイルに書き込みません。")
-        return False
-
-    try:
-        with open(file_path, "w", newline="", encoding="utf-8") as file:
-            writer = csv.writer(file)
-            writer.writerows(data_list)
-        return True
-    except Exception as e:
-        print(f"ファイル書き込み中にエラーが発生しました: {e}")
-        return False
+    return plan_list
 
 
 def add_planlist(row, yyyy, start_year, plan_list):
@@ -163,11 +137,20 @@ def add_planlist(row, yyyy, start_year, plan_list):
     return yyyy
 
 
-def fill_dummydata(unique_year_list, start_year, last_year, plan_list):
+def fill_dummydata(plan_list, start_year, last_year):
     """
     抜けている年のデータ（ダミーデータ）を追加する
     - 長期修繕計画では期間中の工事予定が無い年のデータも必要
     """
+
+    # 工事予定年だけのリストを作成
+    year_list = []
+    for i in plan_list:
+        year_list.append(i[1])
+    # 重複年を除去
+    unique_year_list = list(set(year_list))
+    # 重複を除去したリストを昇順にソート
+    unique_year_list.sort()
 
     for cnt_year in range(start_year, last_year):
         # データが存在すればスキップする
@@ -179,6 +162,27 @@ def fill_dummydata(unique_year_list, start_year, last_year, plan_list):
             dummy_data[1] = cnt_year
             plan_list.append(dummy_data)
         cnt_year += 1
+
+    return plan_list
+
+
+# CSVファイルにリストを書き込む
+def save_csv(file_path, data_list):
+    """
+    リスト（リストのリスト）をCSVファイルに書き込む関数。
+    """
+    if not data_list:
+        print("データが空のため、ファイルに書き込みません。")
+        return False
+
+    try:
+        with open(file_path, "w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerows(data_list)
+        return True
+    except Exception as e:
+        print(f"ファイル書き込み中にエラーが発生しました: {e}")
+        return False
 
 
 if __name__ == "__main__":
