@@ -1,5 +1,5 @@
 """
-mkplandata.py
+【make_plandata.py】
 周期データcsvデータから長期修繕計画csvデータを作成する。
 by N.Goto
 
@@ -101,7 +101,7 @@ def make_plan(data_list, start_year, last_year):
     for row in data_list:
         # 最初の工事を行う年（西暦）
         yyyy = int(row[3])
-        # 1つの工事項目について最大100年分
+        # 1つの工事項目についてlimmit_num回繰り返す
         for i in range(1, limmit_num):
             # 予定年度が最終計画年度以上になったら、次の工事名処理を行う.
             if yyyy >= last_year:
