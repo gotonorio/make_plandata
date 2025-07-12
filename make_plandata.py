@@ -1,7 +1,7 @@
 """
 【make_plandata.py】
-周期データcsvデータから長期修繕計画csvデータを作成する。
-by N.Goto
+    工事毎の周期データから長期修繕計画用csvデータを作成する。
+    programming by N.Goto
 
 入力する周期データ：
     - ヘッダー行 [ver, 工事種別, 工事名, 第1回目の工事年, 工事周期, 金額（消費税・経費別), 備考]
@@ -15,6 +15,8 @@ by N.Goto
 import argparse
 import csv
 import datetime
+from typing import List, Union
+from pathlib import Path
 import os
 import sys
 from textwrap import dedent
@@ -73,7 +75,8 @@ def main():
         sys.exit()
 
     # (1) csvファイルの読み込み
-    data_list = read_csv(file_path)
+    # data_list = read_csv(file_path)
+    data_list = read_csv_new(file_path)
 
     # (2) 周期データの作成
     plan_list = make_plan(data_list, start_year, last_year)
@@ -117,6 +120,64 @@ def read_csv(file_path):
         return False
 
     return data_list
+
+def read_csv_new(file_path: Union[str, Path]) -> List[List[str]] | bool:
+    """
+    CSV ファイルを読み込み、データをリストで返す。
+
+    Parameters
+    ----------
+    file_path : str | Path
+        読み込む CSV ファイルのパス。
+
+    Returns
+    -------
+    list[list[str]] | bool
+        読み込んだ行データ（ヘッダ行を除く）。
+        重大なエラーがある場合は False を返す。
+
+    エラールール
+    ------------
+    * ファイルが存在しない → False
+    * 1列目（バージョン番号）が空欄の行を検出 → False
+    * CSV フォーマットエラー → False
+    """
+    path = Path(file_path)
+
+    # 1. ファイル存在確認
+    if not path.is_file():
+        print(f"ファイルが見つかりません: {path}", file=sys.stderr)
+        return False
+
+    rows: list[list[str]] = []
+
+    try:
+        # 2. BOM付きUTF‑8も考慮し、改行はcsvモジュールに任せる
+        with path.open(mode="r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.reader(f)
+            header = next(reader, None)
+
+            for line_no, row in enumerate(reader, start=2):
+                # 3‑A. ファイル末尾の空行などはスキップ
+                if not row or all(cell.strip() == "" for cell in row):
+                    continue
+
+                # 3‑B. 1列目チェック（仕様上必須）
+                if row[0].strip() == "":
+                    print(f"{line_no} 行目のバージョン番号が空欄です: {row}",
+                          file=sys.stderr)
+                    return False
+
+                rows.append(row)
+
+    except csv.Error as e:      # フォーマット異常
+        print(f"CSV 解析中にエラー（{e}）が発生しました。", file=sys.stderr)
+        return False
+    except Exception as e:      # それ以外
+        print(f"ファイル読み込み中に予期しないエラー: {e}", file=sys.stderr)
+        return False
+
+    return rows
 
 
 def make_plan(data_list, start_year, last_year):
