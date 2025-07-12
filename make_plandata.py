@@ -14,8 +14,10 @@ by N.Goto
 
 import argparse
 import csv
+import datetime
 import os
 import sys
+from textwrap import dedent
 
 # 1つの工事項目について最大100年分(回分)
 limmit_num = 100
@@ -27,14 +29,39 @@ def main():
     # 引数のパーサーを作成
     parser = argparse.ArgumentParser(description="長期修繕計画データを作成する.")
 
+    # デフォルトの計画期間は当年から35年後まで
+    start_year = datetime.datetime.now().year
+    last_year = start_year + 36
+
+    # ヘルプメッセージの作成
+    help_msg = dedent("""\
+            データファイル名（構造は9列のcsvファイル）
+            (1) バージョン番号,
+            (2) 実施年度,
+            (3) 工事タイプ,
+            (4) 工事名,
+            (5) 数量（基本的に「1」）,
+            (6) 単位（基本的に「式」）,
+            (7) 予算,
+            (8) 実績値（基本的に「0」）,
+            (9) コメント """)
+
+    parser = argparse.ArgumentParser(
+        description="売上データを集計するスクリプト", formatter_class=argparse.RawTextHelpFormatter
+    )
+
     # 引数を定義
-    parser.add_argument("-f", "--file_path", type=str, required=True, help="対象のファイル名")
-    parser.add_argument("-s", "--start_year", type=int, required=True, default=2025, help="計画の初年度")
-    parser.add_argument("-e", "--last_year", type=int, required=True, default=2061, help="計画の最終年度")
+    parser.add_argument("-f", "--csv_file_path", type=str, required=True, help=help_msg)
+    parser.add_argument(
+        "-s", "--start_year", type=int, default=start_year, help="計画の初年度（default：当年度）"
+    )
+    parser.add_argument(
+        "-e", "--last_year", type=int, default=last_year, help="計画の最終年度+1（default：当年度+36年）"
+    )
 
     # 引数の読み込み
     args = parser.parse_args()
-    file_path = args.file_path
+    file_path = args.csv_file_path
     start_year = args.start_year
     last_year = args.last_year
 
