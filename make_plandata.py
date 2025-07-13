@@ -75,8 +75,7 @@ def main():
         sys.exit()
 
     # (1) csvファイルの読み込み
-    # data_list = read_csv(file_path)
-    data_list = read_csv_new(file_path)
+    data_list = read_csv(file_path)
 
     # (2) 周期データの作成
     plan_list = make_plan(data_list, start_year, last_year)
@@ -90,40 +89,9 @@ def main():
 
 
 # CSVファイルの読み込み
-def read_csv(file_path):
+def read_csv(file_path: Union[str, Path]) -> List[List[str]] | bool:
     """
-    CSVファイルを読み込み、データをリストで返す関数。
-    バージョン番号（1列目）が空欄の行がある場合はエラーを表示してFalseを返す。
-    """
-    if not os.path.exists(file_path):
-        print(f"ファイルが見つかりません: {file_path}")
-        return False
-
-    data_list = []
-
-    try:
-        with open(file_path, mode="r", encoding="utf-8") as file:
-            csv_reader = csv.reader(file)
-            next(csv_reader, None)  # ヘッダをスキップ
-
-            for i, row in enumerate(csv_reader, start=2):  # 行番号は2行目から始まる
-                # 空行はスキップする.
-                if not row or row[0].strip() == "":
-                    print(f"{i}行目をスキップしました.: {row}")
-                    continue
-                    # print(f"{i}行目のバージョン番号が設定されていません: {row}")
-                    # return False
-                data_list.append(row)
-
-    except Exception as e:
-        print(f"ファイル読み込み中にエラーが発生しました: {e}")
-        return False
-
-    return data_list
-
-def read_csv_new(file_path: Union[str, Path]) -> List[List[str]] | bool:
-    """
-    CSV ファイルを読み込み、データをリストで返す。
+    CSV ファイルを読み込み、データをリストで返す。失敗した時にはboolean値（False）を返す。
 
     Parameters
     ----------
@@ -162,7 +130,7 @@ def read_csv_new(file_path: Union[str, Path]) -> List[List[str]] | bool:
                 if not row or all(cell.strip() == "" for cell in row):
                     continue
 
-                # 3‑B. 1列目チェック（仕様上必須）
+                # 3‑B. 1列目チェック（csvデータ作成時に忘れることがあるため）
                 if row[0].strip() == "":
                     print(f"{line_no} 行目のバージョン番号が空欄です: {row}",
                           file=sys.stderr)
