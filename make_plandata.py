@@ -15,11 +15,11 @@
 import argparse
 import csv
 import datetime
-from typing import List, Union
-from pathlib import Path
 import os
 import sys
+from pathlib import Path
 from textwrap import dedent
+from typing import List, Union
 
 # 1つの工事項目について最大100年分(回分)
 limmit_num = 100
@@ -27,7 +27,6 @@ limmit_num = 100
 
 def main():
     # 修繕計画データリスト
-    # plan_list = []
     # 引数のパーサーを作成（ヘルプ表示のフォーマットを指定する）
     parser = argparse.ArgumentParser(
         description="長期修繕計画データを作成するスクリプト", formatter_class=argparse.RawTextHelpFormatter
@@ -115,13 +114,14 @@ def read_csv(file_path: Union[str, Path]) -> List[List[str]] | bool:
         print(f"ファイルが見つかりません: {path}", file=sys.stderr)
         return False
 
+    # 型ヒント付きの空リストを作成
     rows: list[list[str]] = []
 
     try:
         # 2. BOM付きUTF‑8も考慮し、改行はcsvモジュールに任せる
         with path.open(mode="r", encoding="utf-8-sig", newline="") as f:
             reader = csv.reader(f)
-            header = next(reader, None)
+            _ = next(reader, None)
 
             for line_no, row in enumerate(reader, start=2):
                 # 3‑A. ファイル末尾の空行などはスキップ
@@ -130,16 +130,15 @@ def read_csv(file_path: Union[str, Path]) -> List[List[str]] | bool:
 
                 # 3‑B. 1列目チェック（csvデータ作成時に忘れることがあるため）
                 if row[0].strip() == "":
-                    print(f"{line_no} 行目のバージョン番号が空欄です: {row}",
-                          file=sys.stderr)
+                    print(f"{line_no} 行目のバージョン番号が空欄です: {row}", file=sys.stderr)
                     return False
 
                 rows.append(row)
 
-    except csv.Error as e:      # フォーマット異常
+    except csv.Error as e:  # フォーマット異常
         print(f"CSV 解析中にエラー（{e}）が発生しました。", file=sys.stderr)
         return False
-    except Exception as e:      # それ以外
+    except Exception as e:  # それ以外
         print(f"ファイル読み込み中に予期しないエラー: {e}", file=sys.stderr)
         return False
 
