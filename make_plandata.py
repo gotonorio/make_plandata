@@ -28,14 +28,16 @@ limmit_num = 100
 def main():
     # 修繕計画データリスト
     # plan_list = []
-    # 引数のパーサーを作成
-    parser = argparse.ArgumentParser(description="長期修繕計画データを作成する.")
+    # 引数のパーサーを作成（ヘルプ表示のフォーマットを指定する）
+    parser = argparse.ArgumentParser(
+        description="長期修繕計画データを作成するスクリプト", formatter_class=argparse.RawTextHelpFormatter
+    )
 
     # デフォルトの計画期間は当年から35年後まで
     start_year = datetime.datetime.now().year
     last_year = start_year + 36
 
-    # ヘルプメッセージの作成
+    # ヘルプメッセージの作成（dedentで行頭のインデントを削除する）
     help_msg = dedent("""\
             データファイル名（構造は9列のcsvファイル）
             (1) バージョン番号,
@@ -47,10 +49,6 @@ def main():
             (7) 予算,
             (8) 実績値（基本的に「0」）,
             (9) コメント """)
-
-    parser = argparse.ArgumentParser(
-        description="売上データを集計するスクリプト", formatter_class=argparse.RawTextHelpFormatter
-    )
 
     # 引数を定義
     parser.add_argument("-f", "--csv_file_path", type=str, required=True, help=help_msg)
